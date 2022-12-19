@@ -8,13 +8,31 @@ import "@typechain/hardhat";
 import "hardhat-abi-exporter";
 import { toSignature, isIncluded } from "./utils/diamond";
 import { cutFacets, replaceFacet } from "./scripts/libraries/diamond";
+import { deploy } from "./scripts/deployContract";
 import * as ipfsUtils from "./utils/ipfs";
 import fs from "fs";
 import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+
+task("deployContract", "Deploys contract")
+  .addParam("contractName", "contract name")
+  .addOptionalVariadicPositionalParam(
+    "constructorArgs",
+    "Constructor arguments"
+  )
+  .setAction(async (taskArgs, hre) => {
+    const address = await deploy({
+      hre,
+      ContractName: taskArgs.contractName,
+      constructorArgs: taskArgs.constructorArgs,
+    });
+    console.log("Deployed ", taskArgs.contractName, "at: ", address);
+  });
+
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
-
   for (const account of accounts) {
     console.log(account.address);
   }
@@ -74,21 +92,19 @@ export default {
   networks: {
     mumbai: {
       url: "https://matic-mumbai.chainstacklabs.com",
-      accounts: [process.env.PRIVATE_KEY && process.env.PRIVATE_KEY],
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
     matic: {
       url: process.env.RPC_URL ?? "",
-      accounts: [process.env.PRIVATE_KEY && process.env.PRIVATE_KEY],
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
     ganache: {
       url: process.env.GANACHE_RPC_URL ?? "",
-      accounts: [process.env.PRIVATE_KEY && process.env.PRIVATE_KEY],
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
     gorli: {
       url: process.env.GORLI_RPC_URL ?? "",
-      accounts: [
-        process.env.GORLI_PRIVATE_KEY && process.env.GORLI_PRIVATE_KEY,
-      ],
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
   },
   paths: {

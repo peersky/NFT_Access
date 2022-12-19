@@ -1,0 +1,13 @@
+[
+  "constructor(address RBAC_PROXY_Address)",
+  "event Fn1Accessed(address sender)",
+  "event Fn2Accessed(address sender)",
+  "event Fn3Accessed(address sender)",
+  "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+  "function owner() view returns (address)",
+  "function renounceOwnership()",
+  "function targetFn1()",
+  "function targetFn2()",
+  "function targetFn3()",
+  "function transferOwnership(address newOwner)"
+]
