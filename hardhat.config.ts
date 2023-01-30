@@ -13,6 +13,7 @@ import * as ipfsUtils from "./utils/ipfs";
 import fs from "fs";
 import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
+import "hardhat-ignore-warnings";
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
