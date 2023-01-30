@@ -8,7 +8,6 @@ const path = require("path");
 const scriptName = path.basename(__filename);
 let adr: AdrSetupResult;
 
-// interface NFTRBAC_Proxy_wTarget  NFTRBAC_Proxy extends TargetContract;
 interface NFTRBACENV extends EnvSetupResult {
   proxy: NFTRBAC_Proxy & TargetContract;
   target: TargetContract;
@@ -55,7 +54,7 @@ describe(scriptName, () => {
       proxyTarget.connect(adr.maliciousActor).targetFn1()
     ).to.be.revertedWith("Forbidden by NFTRBAC");
   });
-  it.only("Can execute method calls with having a required token id", async () => {
+  it("Can execute method calls by HAVING a required token id", async () => {
     const fnSig = env.target.interface.getSighash("targetFn1()");
 
     await env.mockERC1155
@@ -68,7 +67,10 @@ describe(scriptName, () => {
     )) as TargetContract;
 
     expect(
-      await env.mockERC1155.balanceOf(adr.actor.address, 763535957)
+      await env.mockERC1155.balanceOf(
+        adr.actor.address,
+        ethers.BigNumber.from(fnSig)
+      )
     ).to.be.equal("1");
 
     await expect(proxyTarget.connect(adr.actor).targetFn1()).to.emit(
@@ -78,5 +80,113 @@ describe(scriptName, () => {
     await expect(proxyTarget.connect(adr.actor).targetFn2()).to.be.revertedWith(
       "Forbidden by NFTRBAC"
     );
+  });
+  it("Can execute method calls with LOCKING a required token id", async () => {
+    const fnSig = env.target.interface.getSighash("targetFn1()");
+    const lockTokenId = ethers.BigNumber.from(fnSig).add("1");
+
+    await env.mockERC1155
+      .connect(adr.contractDeployer)
+      .mint(adr.actor.address, 1, lockTokenId, "0x");
+
+    const proxyTarget = (await ethers.getContractAt(
+      "TargetContract",
+      env.proxy.address
+    )) as TargetContract;
+
+    expect(
+      await env.mockERC1155.balanceOf(adr.actor.address, lockTokenId)
+    ).to.be.equal("1");
+
+    await env.mockERC1155
+      .connect(adr.actor)
+      .setApprovalForAll(proxyTarget.address, true);
+
+    await expect(proxyTarget.connect(adr.actor).targetFn1()).to.emit(
+      env.target,
+      "Fn1Accessed(address)"
+    );
+    await expect(proxyTarget.connect(adr.actor).targetFn2()).to.be.revertedWith(
+      "Forbidden by NFTRBAC"
+    );
+  });
+  it("Can execute method calls by BURNING a required token id", async () => {
+    const fnSig = env.target.interface.getSighash("targetFn1()");
+    const burnTokenId = ethers.BigNumber.from(fnSig).add("2");
+
+    await env.mockERC1155
+      .connect(adr.contractDeployer)
+      .mint(adr.actor.address, 1, burnTokenId, "0x");
+
+    const proxyTarget = (await ethers.getContractAt(
+      "TargetContract",
+      env.proxy.address
+    )) as TargetContract;
+
+    expect(
+      await env.mockERC1155.balanceOf(adr.actor.address, burnTokenId)
+    ).to.be.equal("1");
+
+    await env.mockERC1155
+      .connect(adr.actor)
+      .setApprovalForAll(proxyTarget.address, true);
+
+    await expect(proxyTarget.connect(adr.actor).targetFn1())
+      .to.emit(env.target, "Fn1Accessed(address)")
+      .to.emit(env.mockERC1155, "TransferSingle")
+      .withArgs(
+        proxyTarget.address,
+        adr.actor.address,
+        ethers.constants.AddressZero,
+        burnTokenId,
+        "1"
+      );
+    await expect(proxyTarget.connect(adr.actor).targetFn1()).to.be.revertedWith(
+      "Forbidden by NFTRBAC"
+    );
+    expect(
+      await env.mockERC1155.balanceOf(adr.actor.address, burnTokenId)
+    ).to.be.equal("0");
+  });
+  it("Can execute method calls by PAYING a required token id to target contract", async () => {
+    const fnSig = env.target.interface.getSighash("targetFn1()");
+    const payTokenId = ethers.BigNumber.from(fnSig).add("3");
+
+    await env.mockERC1155
+      .connect(adr.contractDeployer)
+      .mint(adr.actor.address, 1, payTokenId, "0x");
+
+    const proxyTarget = (await ethers.getContractAt(
+      "TargetContract",
+      env.proxy.address
+    )) as TargetContract;
+
+    expect(
+      await env.mockERC1155.balanceOf(adr.actor.address, payTokenId)
+    ).to.be.equal("1");
+
+    await env.mockERC1155
+      .connect(adr.actor)
+      .setApprovalForAll(proxyTarget.address, true);
+
+    await expect(proxyTarget.connect(adr.actor).targetFn1())
+      .to.emit(env.target, "Fn1Accessed(address)")
+      .to.emit(env.mockERC1155, "TransferSingle")
+      .withArgs(
+        proxyTarget.address,
+        adr.actor.address,
+        env.target.address,
+        payTokenId,
+        "1"
+      );
+    await expect(proxyTarget.connect(adr.actor).targetFn1()).to.be.revertedWith(
+      "Forbidden by NFTRBAC"
+    );
+    expect(
+      await env.mockERC1155.balanceOf(adr.actor.address, payTokenId)
+    ).to.be.equal("0");
+    expect(
+      await env.mockERC1155.balanceOf(env.target.address, payTokenId)
+    ).to.be.equal("1");
   });
 });
