@@ -4,6 +4,7 @@
   "event Fn2Accessed(address sender)",
   "event Fn3Accessed(address sender)",
   "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+  "function onERC1155Received(address, address, uint256, uint256, bytes) view returns (bytes4)",
   "function owner() view returns (address)",
   "function renounceOwnership()",
   "function targetFn1()",
