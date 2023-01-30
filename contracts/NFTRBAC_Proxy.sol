@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 import {ERC1155Burnable} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
-import "hardhat/console.sol";
 
 // solc-ignore-next-line missing-receive
 contract NFTRBAC_Proxy {
@@ -45,7 +44,6 @@ contract NFTRBAC_Proxy {
         RequirementTypeEnum senderMust = _detectLeastRequirementType(tokenBaseId);
         uint256 tokenId = getTokenId(tokenBaseId, senderMust);
         // Here we could check if interface is ERC721 || ERC1155
-        // require(senderMust != RequirementTypeEnum.DENIED, "Forbidden by NFTRBAC");
 
         if (senderMust == RequirementTypeEnum.BURN) {
             rbacToken.burn(msg.sender, tokenId, 1);
@@ -54,9 +52,6 @@ contract NFTRBAC_Proxy {
         } else if (senderMust == RequirementTypeEnum.PAY) {
             rbacToken.safeTransferFrom(msg.sender, targetAddress, tokenId, 1, bytes(""));
         }
-
-        // We also could use more sopisticated rules, considering that we have 32 bytes of token Id's
-        // And 4 bytes of function signatures that occupy 4 MSB's, we have 28 LSB's left.
 
         // Execute external function from facet using delegatecall and return any value.
         bytes memory data = msg.data;
