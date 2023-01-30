@@ -38,12 +38,13 @@ contract NFTRBAC_Proxy {
         // get signature
         uint32 signature = uint32(msg.sig);
 
+        // TODO: Here we could check if interface is ERC721 || ERC1155 first. 
         ERC1155Burnable rbacToken = ERC1155Burnable(tokenAddress);
 
         uint256 tokenBaseId = uint256(signature);
         RequirementTypeEnum senderMust = _detectLeastRequirementType(tokenBaseId);
         uint256 tokenId = getTokenId(tokenBaseId, senderMust);
-        // Here we could check if interface is ERC721 || ERC1155
+        
 
         if (senderMust == RequirementTypeEnum.BURN) {
             rbacToken.burn(msg.sender, tokenId, 1);
