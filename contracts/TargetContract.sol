@@ -23,4 +23,14 @@ contract TargetContract is Ownable {
     function targetFn3() public onlyOwner {
         emit Fn3Accessed(msg.sender);
     }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) public view returns (bytes4) {
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+    }
 }

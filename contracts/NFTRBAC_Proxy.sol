@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 import {ERC1155Burnable} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
+import "hardhat/console.sol";
 
+// solc-ignore-next-line missing-receive
 contract NFTRBAC_Proxy {
     enum RequirementTypeEnum {
-        DENIED,
         HAVE,
         LOCK,
         BURN,
@@ -27,7 +28,11 @@ contract NFTRBAC_Proxy {
         if (rbacToken.balanceOf(msg.sender, tokenId + 1) > 0) return RequirementTypeEnum.LOCK;
         if (rbacToken.balanceOf(msg.sender, tokenId + 2) > 0) return RequirementTypeEnum.BURN;
         if (rbacToken.balanceOf(msg.sender, tokenId + 3) > 0) return RequirementTypeEnum.PAY;
-        else return RequirementTypeEnum.DENIED;
+        else revert("Forbidden by NFTRBAC");
+    }
+
+    function getTokenId(uint256 tokenId, RequirementTypeEnum requirementType) internal pure returns (uint256) {
+        return tokenId + uint256(requirementType);
     }
 
     fallback() external payable {
@@ -36,10 +41,11 @@ contract NFTRBAC_Proxy {
 
         ERC1155Burnable rbacToken = ERC1155Burnable(tokenAddress);
 
-        uint256 tokenId = uint256(signature);
-        RequirementTypeEnum senderMust = _detectLeastRequirementType(tokenId);
+        uint256 tokenBaseId = uint256(signature);
+        RequirementTypeEnum senderMust = _detectLeastRequirementType(tokenBaseId);
+        uint256 tokenId = getTokenId(tokenBaseId, senderMust);
         // Here we could check if interface is ERC721 || ERC1155
-        require(senderMust != RequirementTypeEnum.DENIED, "Forbidden by NFTRBAC");
+        // require(senderMust != RequirementTypeEnum.DENIED, "Forbidden by NFTRBAC");
 
         if (senderMust == RequirementTypeEnum.BURN) {
             rbacToken.burn(msg.sender, tokenId, 1);
@@ -63,7 +69,7 @@ contract NFTRBAC_Proxy {
             returndatacopy(0, 0, returndatasize())
         }
         if (senderMust == RequirementTypeEnum.LOCK) {
-            rbacToken.safeTransferFrom(msg.sender, address(this), tokenId, 1, bytes(""));
+            rbacToken.safeTransferFrom(address(this), msg.sender, tokenId, 1, bytes(""));
         }
         assembly {
             switch success
