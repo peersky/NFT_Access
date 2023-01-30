@@ -1,9 +1,10 @@
-#ACCESS PERMISSIONS POC WITH NFTs
+# ACCESS PERMISSIONS POC WITH NFTs
 
 ## Concept
 
-Any method call signature in EVM maps down to 4 bytes message signature which is equivalent of `uint32`
-NFT token Ids can be pretty much anything in number space of  `uint256`.
+Any method call signature in EVM maps down to 4 bytes message signature which is equivalent of `uint32`.
+
+On the other hand, NFT token Ids can be pretty much anything in number space of  `uint256`. Which means there is intersection between those two spaces that can be used to define access permissions. 
 
 In this proof of concept, called method signature is used to calculate token Ids which are needed to access the method. 
 
